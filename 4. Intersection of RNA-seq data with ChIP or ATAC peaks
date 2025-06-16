@@ -1,1 +1,14 @@
+Prior to this, annotated peak files from ChIP or ATAC and geneID csv files from RNA-seq DESeq2 must have been generated
 
+# Copy the list of gene names associated with the peaks of interest into an excel file
+
+# Copy the list of gene names and corresponding log2FC values from DEseq2 into the same excel document
+
+# Use the below function to associate gene names of peaks with corresonding log2FC values
+  =VLOOKUP(column of peak gene names, columns containing RNA-seq gene names and log2FC values, 2, FALSE)
+
+# Remove any N/A and blank values
+
+# Copy list of peak gene names, and new column containing their associated expression level into a new sheet
+
+# Sheet now contains the list genes associated with either ATAC or ChIP peaks, and corresponding differential expression log2FC
