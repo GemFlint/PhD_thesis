@@ -1,1 +1,3 @@
+ATAC-seq bioinformatic analysis performed on Imperial HPC, unless stated otherwise
 
+Technical replicate merging, adaptor trimming, fastqc and alignment are the same as steps 
