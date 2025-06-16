@@ -95,5 +95,45 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
 
 Additional analysis performed after peak files had been generated and annotated
 
+8. Differential analysis, using R
+
+    #installation of diffbind in Rstudio
+        install.packages("BiocManager")
+        install.packages("tidyverse")
+        BiocManager::install("DiffBind")
+        library(DiffBind)
+
+    #make csv file with samples and sample parameters- SampleID, Factor, Replicate, bamControl, bamReads, Peaks, PeakCaller, Tissue, Condition
+
+    #run diffbind on sample sheet and create report
+        differential_analysis_sheet <- dba.analyze("sample_sheet_created.csv")
+        saved_differential_analysis_sheet.DB <- dba.report(differential_analysis_sheet)
+        write.csv(saved_differential_analysis_sheet.DB, "sample_sheet_created.csv")
+
+    #plot and cluster
+        sum(saved_differential_analysis_sheet.DB$Fold>0)
+        sum(saved_differential_analysis_sheet.DB$Fold<0)
+        plot(saved_differential_analysis_sheet.DB)
+        dba.plotVolcano(saved_differential_analysis_sheet.DB)
+
+9. Generation of SuperG4 peaks using ROSE
+
+    #generation of stitched table
+        module load anaconda3/personal 
+        module load bedtools 
+        module load samtools 
+        export PATH=$PATH:path_to_ROSE/ROSE/ROSE-master/bin 
+        mkdir annotation 
+        cp path_to_ucsc_reference_genome/hg38_refseq.ucsc annotation 
+        ROSE_main.py -g hg38 -i $pathto/peak_file.bed -r $pathto/alignment.bam -o output_file_name
+
+    #create new excel sheet from output_file containing column 1: chr, 2: start coordinate, 3: end cooridnate, 4: peak ID but with NO headings and save as tab deliminated txt
+
+    #convert to bed file and intersect with G4 peak file to obtain list of individual G4s present in SuperG4s, and annotate
+        mv file.txt file.bed 
+        bedtools intersect -u -a g4_peaks.bed -b SuperG4_peaks.bed > g4_peaks_in_SuperG4s.bed
+        module load homer
+        annotatePeaks.pl g4_peaks_in_SuperG4s.bed hg38 > annotated_G4_in_SuperG4.bed 2> report_G4_in_SuperG4.bed
+
 
 
