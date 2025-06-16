@@ -56,8 +56,39 @@ RNA-seq bioinformatic analysis completed as part of PhD project, all executed on
   #convert .txt into a .csv file
 
   #DEseq2 now done in R
+
+  #initial download
+    > if (!require("BiocManager", quietly = TRUE))
+    +     install.packages("BiocManager")
+    > BiocManager::install("Rsubread")
+
   #importing and pre-processing in R
-    
+    fc_file <- read.csv("feature_count_file.csv") 
+    samp2 <- fc_file[,-1] 
+    rownames(samp2) <- fc_file[,1]
+    samp2[is.na(samp2)] <- 0
+
+  #DEseq2 download
+    BiocManager::install("DESeq2")
+    library(DESeq2)
+
+  #DEseq2
+    samp2 <- read.delim("fc_file.txt", header = TRUE, sep = "\t")
+    condition <- c("put_DE_conditions_here")
+    rownames(samp2) <- samp2[,1]  
+    samp2 <- samp2[,-1] 
+    colData <- DataFrame(condition = condition)
+    dds <- DESeqDataSetFromMatrix(countData = samp2, colData = colData, design = ~ condition)
+    dds <- dds[rowSums(counts(dds))>=10,]
+
+  #differential analysis and results formatting
+    dds <- DESeq(dds)
+    res <- results(dds)
+    res
+    resultsNames(dds) 
+    res.shr <- lfcShrink(dds,coef="condition_1_vs_2")
+    resFix <- res.shr[!is.na(res.shr$padj),]
+    write.csv(as.data.frame(resFix), file="geneID_RNA_1_v_2.csv")
     
 
 
