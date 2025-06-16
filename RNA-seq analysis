@@ -1,1 +1,20 @@
+RNA-seq bioinformatic analysis completed as part of PhD project, all executed on Imperial HPC unless stated otherwise
+
+1. Trimming of sequencing adaptors using fastp 
+
+  #fastp download
+    module load anaconda3/personal
+    conda install -c bioconda fastp
+
+  #fastp adaptor trimming
+    module load anaconda3/personal
+    path_to_fastp/fastp -i path_to_read_1/read_1.fastq.gz -I path_to_read_2/read_2.fastq.gz -o trimmed_read_1.fastq.gz -O               trimmed_read_2.fastq.gz --detect_adapter_for_pe -l 20 -j  trimmed_file.json -h trimmed_file.fastp.html
+
+  #gunzip of files 
+    gunzip trimmed_read_files.fastq.gz
+
+2. Building of genome with correct overhang using STAR (dependent on read length, read length-1)
+
+    module load star
+    STAR --runThreadN 12 --runMode genomeGenerate --genomeDir path_to_genome_directory/star99 --genomeFastaFiles               path_to_ucsc_genome/hg38.fa --sjdbGTFfile path_to_genome_index/hg38.refGene.gtf --sjdbOverhang insert_overhang_number_here
 
