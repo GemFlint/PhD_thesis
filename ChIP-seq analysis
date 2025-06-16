@@ -12,7 +12,7 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
 
   #fastp adaptor trimming
     module load anaconda3/personal
-    path_to_fastp/fastp -i path_to_read_1/read_1.fastq.gz -I path_to_read_2/read_2.fastq.gz -o trimmed_read_1.fastq.gz -O     trimmed_read_2.fastq.gz --detect_adapter_for_pe -l 20 -j      trimmed_file.json -h trimmed_file.fastp.html
+    path_to_fastp/fastp -i path_to_read_1/read_1.fastq.gz -I path_to_read_2/read_2.fastq.gz -o trimmed_read_1.fastq.gz -O trimmed_read_2.fastq.gz --detect_adapter_for_pe -l 20 -j      trimmed_file.json -h trimmed_file.fastp.html
 
   #gunzip of files 
     gunzip trimmed_read_files.fastq.gz
@@ -27,7 +27,7 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
 3. Downloading and indexing human genome (hg38)
 
   #genome download
-    wget --no-verbose --directory-prefix hg38_genome     "ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
+    wget --no-verbose --directory-prefix hg38_genome "ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
     gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 
   #genome index 
@@ -49,7 +49,7 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
     wget https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg38-blacklist.v2.bed.gz
     gunzip hg38-blacklist.v2.bed.gz
 
-  #filtering and sorting- deduplication, removal of unmapped and reads mapped more than one, indexing, removal of low quality reads,    removal of blacklisted regions and sorting
+  #filtering and sorting- deduplication, removal of unmapped and reads mapped more than one, indexing, removal of low quality reads, removal of blacklisted regions and sorting
     module load samtools
     module load bedtools
     module load picard
@@ -59,7 +59,7 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
     samtools view -F 2308 -b -q 10 path_to_file/$name.sam > $name.bam
     samtools sort -o $name.sort.bam -O 'bam' -T temp_$name $name.bam
     picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$name.sort.bam O=$name.dedup.sort.bam M=$name.metrics.txt
-    bedtools intersect -v -abam $name.dedup.sort.bam -b 'path_to_blacklisted_regions_download/hg38-blacklist.v2.bed' >     $name.bl.dedup.sort.bam
+    bedtools intersect -v -abam $name.dedup.sort.bam -b 'path_to_blacklisted_regions_download/hg38-blacklist.v2.bed' > $name.bl.dedup.sort.bam
     samtools index $name.bl.dedup.sort.bam
     rm $name.bam $name.sort.bam $name.dedup.sort.bam
     done
@@ -74,11 +74,11 @@ G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated other
 6. Peak calling and intersection
 
   #peaking calling using macs2
-    path_to_macs2/macs2 callpeak -t path_to_ChIP_file/trimmed_aligned_sorted_ChIP_file.bam -c     path_to_input_file/trimmed_aligned_sorted_input_file.bam -n peak_file
+    path_to_macs2/macs2 callpeak -t path_to_ChIP_file/trimmed_aligned_sorted_ChIP_file.bam -c path_to_input_file/trimmed_aligned_sorted_input_file.bam -n peak_file
 
   #intersecting peak files for 2/3 biological repeats
     module load bedtools
-    bedtools intersect -u a ChIP_peak_file_1.narrowPeak -b ChIP_peak_file_2.narrowPeak -b ChIP_peak_file_3.narrowPeak >     intersected_peak_file_2/3_repeats.narrowPeak
+    bedtools intersect -u a ChIP_peak_file_1.narrowPeak -b ChIP_peak_file_2.narrowPeak -b ChIP_peak_file_3.narrowPeak > intersected_peak_file_2/3_repeats.narrowPeak
 
   #intersecting peak files to establish peaks present in 1 file and not the other
     module load bedtools
@@ -127,7 +127,7 @@ Additional analysis performed after peak files had been generated and annotated
         cp path_to_ucsc_reference_genome/hg38_refseq.ucsc annotation 
         ROSE_main.py -g hg38 -i $pathto/peak_file.bed -r $pathto/alignment.bam -o output_file_name
 
-    #create new excel sheet from output_file containing column 1: chr, 2: start coordinate, 3: end cooridnate, 4: peak ID but with NO     headings and save as tab deliminated txt
+    #create new excel sheet from output_file containing column 1: chr, 2: start coordinate, 3: end cooridnate, 4: peak ID but with NO headings and save as tab deliminated txt
 
     #convert to bed file and intersect with G4 peak file to obtain list of individual G4s present in SuperG4s, and annotate
         mv file.txt file.bed 
