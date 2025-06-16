@@ -1,3 +1,25 @@
 ATAC-seq bioinformatic analysis performed on Imperial HPC, unless stated otherwise
 
-Technical replicate merging, adaptor trimming, fastqc and alignment are the same as steps 
+Technical replicate merging, adaptor trimming, fastqc, alignment and sorting/filtering are the same as steps 1-5 in ChIP-seq analysis section.
+
+Subsequent steps taken after.
+
+1. Additional sorting to remove mitochondrial reads
+
+    module load samtools
+    for file in path_to_sorted_files/sorted_files.bam
+    do
+    name=`basename $file .bam`
+    samtools view -h $file | grep -v chrM | samtools view -h -b - > $name.nomito.bam
+    done
+
+2. Peak calling using macs2 with no input file
+
+    module load anaconda3/personal
+    for file in path_to_file/sorted_no_mitochondial_reads_file.bam
+    do
+    name=`basename $file .bl.dedup.sort.nomito.bam`
+    macs2 callpeak -f BAMPE --nolambda -t $file -n $name
+    done
+
+Peaks intersections to generate files with 2/3 biological repeats, and in one file or another done the same way as in ChIP-seq analysis using bedtools intersect
