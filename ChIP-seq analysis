@@ -1,1 +1,99 @@
+G4 ChIP-seq bioinformatic analysis, all done on Imperial HPC unless stated otherwise
+
+1. Merge technical replicates
+
+    cat path_to_technical_rep_1/tech_rep_1 path_to_technical_rep_2/tech_rep_2 > merged_file_name
+
+2. Trimming of sequencing adaptors using fastp and fastqc
+
+  #fastp download
+    module load anaconda3/personal
+    conda install -c bioconda fastp
+
+  #fastp adaptor trimming
+    module load anaconda3/personal
+    path_to_fastp/fastp -i path_to_read_1/read_1.fastq.gz -I path_to_read_2/read_2.fastq.gz -o trimmed_read_1.fastq.gz -O trimmed_read_2.fastq.gz --detect_adapter_for_pe -l 20 -j      trimmed_file.json -h trimmed_file.fastp.html
+
+  #gunzip of files 
+    gunzip trimmed_read_files.fastq.gz
+
+  #fastqc to assess success of trimming
+    module load fastqc
+    for file in path_to_files/*.fastq
+    do
+    fastqc $file -d $TMPDIR -o .
+    done
+
+3. Downloading and indexing human genome (hg38)
+
+  #genome download
+    wget --no-verbose --directory-prefix hg38_genome "ftp.ensembl.org/pub/release-104/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz"
+    gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+
+  #genome index 
+    module load anaconda3/personal
+    module load bowtie2
+    bowtie2-build path_to_genome_download/Homo_sapiens.GRCh38.dna.primary_assembly.fa hg38 
+
+4. Read alignment to indexed genome
+
+    module load anaconda3/personal
+    module load bowtie2
+    read_1="path_to_read_1"
+    read_2="path_to_read_2"
+    bowtie2 -x path_to_indexed_genome/hg38 -1 $read_1 -2 $read_2 -S aligned_file.sam 2> summary_of_alignment.txt
+
+5. Sorting and filtering of aligned reads
+
+  #downloading blacklisted regions
+    wget https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg38-blacklist.v2.bed.gz
+    gunzip hg38-blacklist.v2.bed.gz
+
+  #filtering and sorting- deduplication, removal of unmapped and reads mapped more than one, indexing, removal of low quality reads, removal of blacklisted regions and sorting
+    module load samtools
+    module load bedtools
+    module load picard
+    for file in path_to_aligned_files/*.sam
+    do
+    name=`basename $file .sam` 
+    samtools view -F 2308 -b -q 10 path_to_file/$name.sam > $name.bam
+    samtools sort -o $name.sort.bam -O 'bam' -T temp_$name $name.bam
+    picard MarkDuplicates REMOVE_DUPLICATES=TRUE I=$name.sort.bam O=$name.dedup.sort.bam M=$name.metrics.txt
+    bedtools intersect -v -abam $name.dedup.sort.bam -b 'path_to_blacklisted_regions_download/hg38-blacklist.v2.bed' > $name.bl.dedup.sort.bam
+    samtools index $name.bl.dedup.sort.bam
+    rm $name.bam $name.sort.bam $name.dedup.sort.bam
+    done
+
+  #check to see if reads have been removed using line count
+    wc -l filtered_file.bam
+
+  #additional check to see if deduplication has worked using samtools, value will be 0 if successful
+    module load samtools
+    samtools view your_sample.bam | grep -c '2308\t'
+
+6. Peak calling and intersection
+
+  #peaking calling using macs2
+    path_to_macs2/macs2 callpeak -t path_to_ChIP_file/trimmed_aligned_sorted_ChIP_file.bam -c path_to_input_file/trimmed_aligned_sorted_input_file.bam -n peak_file
+
+  #intersecting peak files for 2/3 biological repeats
+    module load bedtools
+    bedtools intersect -u a ChIP_peak_file_1.narrowPeak -b ChIP_peak_file_2.narrowPeak -b ChIP_peak_file_3.narrowPeak > intersected_peak_file_2/3_repeats.narrowPeak
+
+  #intersecting peak files to establish peaks present in 1 file and not the other
+    module load bedtools
+    bedtools intersect -v -a ChIP_peak_file_1.narrowPeak -b ChIP_peak_file_2.narrowPeak > peaks_present_only_in_file_1.narrowPeak
+
+7. Annotation of peaks
+
+  #conversion of file from narrowPeak to bed
+    awk 'BEGIN {OFS="\t"} {print $1, $2, $3, $4, $5, $6}' input.narrowPeak > output.bed
+
+  #peak annotation using homer
+    module load homer
+    annotatePeaks.pl  peak_file.bed hg38 > annotated_peak_file.bed 2> report_peak_file.bed
+
+Additional analysis performed after peak files had been generated and annotated
+
+
 
